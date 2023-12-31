@@ -1,9 +1,11 @@
 from vkbottle.bot import BotLabeler, Message, Bot
 from functions import (get_user, insert_user, insert_newnickname, get_top_users_by_them, 
-                       format_number, get_user_place_in_top, update_user_bonus_time, bonus_get)
+                       format_number, get_user_place_in_top, update_user_bonus_time, 
+                       bonus_get, race_update_cups, race_update_cooldown, get_users_by_them,
+                       get_random_user, generate_profile_image, bot_get_user,
+                       converter, transfer_money)
 from config import successfull_registration, token, phrases, emoji_dict
-from vkbottle import Keyboard, KeyboardButtonColor, Text
-import random
+import random, asyncio
 from datetime import datetime, timedelta
 
 ul = BotLabeler()
@@ -18,15 +20,18 @@ async def help(message: Message):
         return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), мои команды:"
                                     "\n\n📚 Основное:"
                                     "\nㅤ📙 Профиль"
-                                    "\nㅤ📊 Топ [Параметр]"
-                                    "\nㅤ✏️ Ник [Новый ник]"
+                                    "\nㅤ📊 Топ"
+                                    "\nㅤ✏️ Ник"
                                     "\nㅤ🔖 Продать [Предмет]"
                                     "\nㅤ🛒 Магазин"
+                                    "\nㅤ💵 Перевести [ID]  [Сумма]"
                                     "\n\n💸 Заработок:"
                                     "\nㅤ🎁 Бонус"
                                     "\nㅤ⛱️ Рыбалка"
                                     "\nㅤ💽 Майнинг"
+                                    "\nㅤ🚖 Таксовать"
                                     "\n\n🌈 Равзлечения:"
+                                    "\nㅤ🏁 Гонка"
                                     "\nㅤ🎰 Казино [Ставка]")
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
@@ -51,7 +56,7 @@ async def profile(message: Message):
                     "7": "Квартира в Odeon Tower", "8": "Сарай"}
             flat_description = flat.get(str(user_info['flat']), '')
             if flat_description:  # Проверка, что описание квартиры существует
-                display_property += f"\nㅤ🏬 Квартира: {flat_description}"
+                display_property += f"\nㅤ🏬 {flat_description}"
 
         if 'farm-count' in user_info and user_info['farm-count']:
             # Переменная `farm_type` должна быть определена где-то в вашем коде.
@@ -63,14 +68,14 @@ async def profile(message: Message):
                     "7": "Rolls-Royce Sweptail", "8": "Bugatti Bolide", "9": "Aurus Senat Limousine", "10": "Новогодний унитаз 🌲"}
             car_description = car.get(str(user_info['car']), '')
             if car_description:  # Проверка, что описание автомобиля существует
-                display_property += f"\nㅤ🚗 Машина: {car_description}"
+                display_property += f"\nㅤ🚗 {car_description}"
 
         if 'yacht' in user_info and user_info['yacht'] is not None:
             yacht = {"1": "Seven Seas", "2": "Octopus", "3": "Lady Moura", "4": "Al Mirqab", 
                       "5": "Eclipse", "6": "Histoty SUPREMEE", "7": "Баранка"}
             yacht_description = yacht.get(str(user_info['yacht']), '')
             if yacht_description:  # Проверка, что описание автомобиля существует
-                display_property += f"\nㅤ🛥️ Яхта: {yacht_description}"
+                display_property += f"\nㅤ🛥️ {yacht_description}"
 
         if display_property == "\n🔑 Имущество:":
             display_property += '\nㅤㅤПусто'
@@ -79,14 +84,14 @@ async def profile(message: Message):
             f"@id{user_info['id']}({user_info['nickname']}), ваш профиль:"
             f"\n\n🔎 ID: {user_info['bot_id']}" +
             (f"\n{display_status}" if display_status else "") +
+            f"\n🏆 {user_info['cups']} Кубков"
             f"\n💸 Баланс: {user_info['balance']:,}$".replace(',', '.') +
             f"\n⭐ {exp:,} EXP".replace(',', '.') +
             f"\n💽 Биткоины: {user_info['bitcoin']:,}₿".replace(',', '.') +
             display_property
         )
-        keyboard = Keyboard(one_time=False, inline=True)
-        keyboard.add(Text("Помощь"), color=KeyboardButtonColor.POSITIVE)
-        return await message.answer(profile_message, keyboard=keyboard.get_json())
+        attachment = await generate_profile_image(flat=user_info['flat'], car=user_info['car'])
+        return await message.answer(profile_message, attachment=attachment)
 
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
@@ -179,4 +184,142 @@ async def bonus(message: Message):
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), держите бонус {price:,}$ и {exp:,} EXP 😎".replace(',', '.'))
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
+        await message.answer(successfull_registration)
+
+
+@ul.message(text="Гонка")
+async def race(message: Message):
+    user = await bot.api.users.get(message.from_id)
+    user_info = await get_user(user_id=user[0].id)
+    now = datetime.now()
+    if user_info:
+        if user_info['car'] is None or user_info['car'] == 0:
+            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет машины ❌")
+        else:
+            if user_info['last_race_time'] is None or now - user_info['last_race_time'] > timedelta(minutes=20):
+                users_with_cars = await get_users_by_them(type='car')
+                opponent = await get_random_user(users=users_with_cars, excluded_user_id=user_info['id'])
+                sent_message = await message.answer(
+                    f"@id{user_info['id']}({user_info['nickname']}), вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n⌛ Результаты через 4"
+                )
+                if int(user_info['car']) > int(opponent['car']):
+                    for i in reversed(range(-1, 3)):
+                        await asyncio.sleep(1)
+                        new_text = f"@id{user_info['id']}({user_info['nickname']}), вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n⌛ Результаты через {i+1}"
+                        await bot.api.messages.edit(
+                            peer_id=sent_message.peer_id,
+                            message=new_text,
+                            **{
+                                attr: getattr(sent_message, attr)
+                                for attr in ['message_id', 'conversation_message_id']
+                                if hasattr(sent_message, attr) and getattr(sent_message, attr)
+                            }
+                        )
+                    new_text = f"@id{user_info['id']}({user_info['nickname']}), гонка против @id{opponent['id']}({opponent['nickname']}) завершена 🏁\n\n 🥇 Вы пришли к финишу первым! +100 🏆"
+                    await race_update_cooldown(user_id=user_info['id'], new_race_time=now.isoformat())
+                    await race_update_cups(user_id=user_info['id'],operation='+', count=100, cups=user_info['cups'])
+                    await bot.api.messages.edit(
+                        peer_id=sent_message.peer_id,
+                        message=new_text,
+                        **{
+                            attr: getattr(sent_message, attr)
+                            for attr in ['message_id', 'conversation_message_id']
+                            if hasattr(sent_message, attr) and getattr(sent_message, attr)
+                        }
+                    )
+                    await message.answer(sticker_id=83931)
+                    return
+                elif int(user_info['car']) < int(opponent['car']):
+                    for i in reversed(range(-1, 3)):
+                        await asyncio.sleep(1)
+                        new_text = f"@id{user_info['id']}({user_info['nickname']}), вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n⌛ Результаты через {i+1}"
+                        await bot.api.messages.edit(
+                            peer_id=sent_message.peer_id,
+                            message=new_text,
+                            **{
+                                attr: getattr(sent_message, attr)
+                                for attr in ['message_id', 'conversation_message_id']
+                                if hasattr(sent_message, attr) and getattr(sent_message, attr)
+                            }
+                        )
+                    new_text = f"@id{user_info['id']}({user_info['nickname']}), гонка против @id{opponent['id']}({opponent['nickname']}) завершена 🏁\n\n 🥈 Противник пришел к финишу первым! -100 🏆"
+                    await race_update_cooldown(user_id=user_info['id'], new_race_time=now.isoformat())
+                    await race_update_cups(user_id=user_info['id'],operation='-', count=100, cups=user_info['cups'])
+                    await bot.api.messages.edit(
+                        peer_id=sent_message.peer_id,
+                        message=new_text,
+                        **{
+                            attr: getattr(sent_message, attr)
+                            for attr in ['message_id', 'conversation_message_id']
+                            if hasattr(sent_message, attr) and getattr(sent_message, attr)
+                        }
+                    )
+                    await message.answer(sticker_id=83936)
+                    return
+                else:
+                    for i in reversed(range(-1, 3)):
+                        await asyncio.sleep(1)
+                        new_text = f"@id{user_info['id']}({user_info['nickname']}), вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n⌛ Результаты через {i+1}"
+                        await bot.api.messages.edit(
+                            peer_id=sent_message.peer_id,
+                            message=new_text,
+                            **{
+                                attr: getattr(sent_message, attr)
+                                for attr in ['message_id', 'conversation_message_id']
+                                if hasattr(sent_message, attr) and getattr(sent_message, attr)
+                            }
+                        )
+                    new_text = f"@id{user_info['id']}({user_info['nickname']}), гонка против @id{opponent['id']}({opponent['nickname']}) завершена 🏁\n\n 🥈 Вы свели счет в ничью! +0 🏆"
+                    await race_update_cooldown(user_id=user_info['id'], new_race_time=now.isoformat())
+                    await bot.api.messages.edit(
+                        peer_id=sent_message.peer_id,
+                        message=new_text,
+                        **{
+                            attr: getattr(sent_message, attr)
+                            for attr in ['message_id', 'conversation_message_id']
+                            if hasattr(sent_message, attr) and getattr(sent_message, attr)
+                        }
+                    )
+                    await message.answer(sticker_id=79410)
+                    return
+            else:
+                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), участвовать в гонке можно раз в 20 минут ❌")
+    else:
+        await insert_user(user_id=user[0].id, first_name=user[0].first_name)
+        await message.answer(successfull_registration)
+
+
+@ul.message(text=["Перевести", "Перевести <id> <count>"])
+async def transfer(message: Message, id=None, count=None):
+    user = await bot.api.users.get(message.from_id)
+    user_info = await get_user(user_id=user[0].id)
+    if user_info:
+        if id is not None:
+            if count is not None:
+                opponent = await bot_get_user(user_id=id)
+                if opponent:
+                    count = await converter(count)
+                    if count > user_info['balance']:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас недостаточно средств ❌")
+                    if count > 50000000 and user_info['status'] not in ["VIP", "ELITE", "Администратор", "Управляющий", "Владелец"]:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 50 миллионов за одну операцию❌\n\n✨ Для увеличения лимита необходимо приобрести VIP-статус.")
+                    elif count > 100000000 and user_info['status'] not in ["ELITE", "Администратор", "Управляющий", "Владелец"]:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 100 миллионов за одну операцию❌\n\n✨ Для увеличения лимита необходимо приобрести ELITE-статус.")
+                    elif count > 200000000 and user_info['status'] not in ["Администратор", "Управляющий", "Владелец"]:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 200 миллионов за одну операцию❌\n\n✨ Для увеличения лимита необходимо приобрести статус Администратора.")
+                    else:
+                        await transfer_money(user_id=user_info['id'], operation='-', count=count)
+                        await transfer_money(user_id=opponent['id'], operation='+', count=count)
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы перевели @id{opponent['id']}({opponent['nickname']}) {count:,}$ ✅".replace(',', '.'))
+                        message = f"@id{user_info['id']}({user_info['nickname']}) перевел вам {count:,}$ 😎".replace(',', '.')
+                        await bot.api.messages.send(user_id=opponent['id'], random_id=0, message=message)
+                        await bot.api.messages.send(user_id=opponent['id'], random_id=0, sticker_id=21099)
+                else:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), такого пользователя не существует❌")
+            else:
+                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), использование: Перевести «ID» «сумма»❌")
+        else:
+            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), использование: Перевести «ID» «сумма»❌")
+    else:
+        await insert_user(user_id=user[0].id, first_name=user[0].first_name)
         await message.answer(successfull_registration)

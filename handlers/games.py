@@ -91,7 +91,7 @@ async def casino(message: Message, count=None):
     if user_info:
         if count is not None:
             multiplier = random.choice(multipliers)
-            if count == 'все':
+            if count == "все":
                 if user_info['balance'] <= 0:
                     await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств ❌")
                 else:
@@ -102,7 +102,7 @@ async def casino(message: Message, count=None):
                     if multiplier in [0.25, 0.5, 0.75]:
                         res = bet * multiplier
                         await casino_lose(user_id=user_info['id'], bet=res)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(bet):,}$ (x{multiplier}) ❌".replace(',', '.'))
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(res):,}$ (x{multiplier}) ❌".replace(',', '.'))
                     elif multiplier == 1:
                         await message.answer(f"@id{user_info['id']}({user_info['nickname']}), деньги остаются при вас 😯")
                     elif multiplier in [1.5, 2.5]:
@@ -120,7 +120,7 @@ async def casino(message: Message, count=None):
                     if multiplier in [0.25, 0.5, 0.75]:
                         res = bet * multiplier
                         await casino_lose(user_id=user_info['id'], bet=res)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), деньги остаются при вас 😯")
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(res):,}$ (x0) ❌".replace(',', '.'))
                     elif multiplier == 1:
                         await message.answer(f"@id{user_info['id']}({user_info['nickname']}), деньги остаются при вас 😯")
                     elif multiplier in [1.5, 2.5, 3.0, 5.0, 10.0]:

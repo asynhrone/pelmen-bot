@@ -1,7 +1,12 @@
 import aiomysql
-import asyncio
+import asyncio, random
 import re
-from config import flat_cost, car_cost, yacht_cost
+from config import flat_cost, car_cost, yacht_cost, token
+from vkbottle import PhotoMessageUploader, Bot
+from PIL import Image
+import io
+
+bot = Bot(token)
 
 def format_number(n):
     if n < 1e6:
@@ -297,6 +302,128 @@ async def sell_them(user_id, type, product):
             await cursor.execute(
                 f"UPDATE `users` SET `{type}`= %s, `balance`=`balance`+ %s WHERE `id`=%s",
                 (0, price, user_id,)
+            )
+    finally:
+        conn.close()
+
+async def race_update_cups(user_id, cups, operation, count):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            if cups is None:
+                await cursor.execute(
+                    f"UPDATE `users` SET `cups`= %s WHERE `id`=%s",
+                    (cups, user_id,)
+                )
+            else:
+                await cursor.execute(
+                    f"UPDATE `users` SET `cups`=`cups`{operation}%s WHERE `id`=%s",
+                    (count, user_id,)
+                )
+    finally:
+        conn.close()
+
+async def race_update_cooldown(user_id, new_race_time):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "UPDATE `users` SET `last_race_time`= %s WHERE `id`=%s",
+                (new_race_time, user_id,)
+            )
+    finally:
+        conn.close()
+
+async def get_users_by_them(type):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(f"SELECT `id`, `nickname`, `{type}` FROM `users` WHERE `{type}` IS NOT NULL ORDER BY `{type}` DESC")
+            result = await cursor.fetchall()
+            return result
+    finally:
+        conn.close()
+
+async def get_random_user(users, excluded_user_id):
+    filtered_users = [user for user in users if user[0] != excluded_user_id]
+    selected_user = random.choice(filtered_users)
+    res = await get_user(user_id=selected_user[0])
+    return res
+
+async def generate_profile_image(flat, car):
+    flats = {"0": "street.png", "1": "chrushevka.png", "2": "chelybinsk.png",
+    "3": "piter.png", "4": "moscow.png", "5": "new-york.png",
+    "6": "in-heart-pekin.png", "7": "odeon-tower.png", "8": "sarai.png"}
+
+    cars = {"0": "", "1": "nissan-pathfinder.png", "2": "mazda6.png", "3": "mercedes-cls.png",
+            "4": "audi-r8.png", "5": "ferarri-458-italia.png", 
+            "6": "mercedes-pullman.png", "7": "rolls-royce-sweeptail.png", "8": "bugatti-bolide.png",
+            "9": "aurus-senat.png", "10": "new-year-unitaz.png"}
+
+    flat_filename = flats[str(flat)] if flat and flat != "0" else flats["0"]
+
+    flat = Image.open(f"images/flats/{flat_filename}")
+    car_filename = cars.get(str(car), "")
+
+    if car_filename:  # Проверяем, не пустая ли строка
+            car = Image.open(f"images/cars/{car_filename}")
+
+            # Если режим изображения 'P', конвертируем его в 'RGBA'
+            if car.mode == 'P':
+                car = car.convert('RGBA')
+
+            # Получаем размеры изображений
+            flat_width, flat_height = flat.size
+            car_width, car_height = car.size
+
+            # Вычисляем координаты для размещения изображения автомобиля
+            x = (flat_width - car_width) // 2 + 300
+            y = (flat_height - car_height) + 250
+
+            # Вставляем изображение автомобиля на изображение фона
+            flat.paste(car, (x, y), car)
+
+    # Prepare the image to be saved in memory
+    img_byte_arr = io.BytesIO()
+    flat.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+
+    # Your existing code to upload the image
+    photo_uploader = PhotoMessageUploader(bot.api)
+    photo = await photo_uploader.upload(img_byte_arr)
+
+    return photo
+
+async def transfer_money(user_id, operation, count):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                f"UPDATE `users` SET `balance`=`balance` {operation} %s WHERE `id`=%s",
+                (count, user_id,)
+            )
+    finally:
+        conn.close()
+
+async def get_taxi(user_id, win_dollars, win_exp):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                f"UPDATE `users` SET `balance`=`balance`+%s, `exp`=`exp`+%s  WHERE `id`=%s",
+                (win_dollars, win_exp, user_id,)
+            )
+    finally:
+        conn.close()
+
+
+async def taxi_update_cooldown(user_id, new_taxi_time):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "UPDATE `users` SET `last_taxi_time`= %s WHERE `id`=%s",
+                (new_taxi_time, user_id,)
             )
     finally:
         conn.close()
