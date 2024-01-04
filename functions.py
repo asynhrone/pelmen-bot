@@ -10,7 +10,7 @@ bot = Bot(token)
 
 def format_number(n):
     if n < 1e6:
-        return f"{n}"
+        return f"{n/1e3:.1f} тыс."
     elif n < 1e9:
         return f"{n/1e6:.1f} млн."
     elif n < 1e12:
@@ -19,6 +19,10 @@ def format_number(n):
         return f"{n/1e12:.1f} трлн."
     else:
         return f"{n/1e15:.1f} трлд."
+
+def format_udochka_number(n):
+    if n < 1e6:
+        return f"{n/1e3:.1f} LVL"
 
 
 async def connect():
@@ -32,8 +36,10 @@ async def insert_user(user_id, first_name):
         async with conn.cursor() as cursor: 
             await cursor.execute("""
                 INSERT INTO `users`
-                (`id`, `bot_id`, `nickname`, `balance`, `status`, `farm-count`, `farm-type`, `bitcoin`, `last_mining_time`, `exp`, `fishing_rob_level`, `last_bonus_time`)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                (`id`, `bot_id`, `nickname`, `balance`, `status`, `farm-count`, `farm-type`, 
+                `bitcoin`, `last_mining_time`, `exp`, `fishing_rob_level`, `last_bonus_time`, 
+                `last_fishing_time`, `flat`, `car`, `yacht`, `last_taxi_time`, `cups`, `last_race_time`)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
             """, (user_id, 0, first_name, 3500, 'Пользователь', 0, 0, 0, None, 0, 1, None))
 
     finally:
@@ -313,7 +319,7 @@ async def race_update_cups(user_id, cups, operation, count):
             if cups is None:
                 await cursor.execute(
                     f"UPDATE `users` SET `cups`= %s WHERE `id`=%s",
-                    (cups, user_id,)
+                    (count, user_id,)
                 )
             else:
                 await cursor.execute(
@@ -338,7 +344,7 @@ async def get_users_by_them(type):
     conn = await connect()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute(f"SELECT `id`, `nickname`, `{type}` FROM `users` WHERE `{type}` IS NOT NULL ORDER BY `{type}` DESC")
+            await cursor.execute(f"SELECT `id`, `nickname`, `{type}` FROM `users` WHERE `{type}` IS NOT NULL AND `{type}` > 0 ORDER BY `{type}` DESC")
             result = await cursor.fetchall()
             return result
     finally:
@@ -378,7 +384,7 @@ async def generate_profile_image(flat, car):
 
             # Вычисляем координаты для размещения изображения автомобиля
             x = (flat_width - car_width) // 2 + 300
-            y = (flat_height - car_height) + 250
+            y = (flat_height - car_height) + 200
 
             # Вставляем изображение автомобиля на изображение фона
             flat.paste(car, (x, y), car)
@@ -424,6 +430,83 @@ async def taxi_update_cooldown(user_id, new_taxi_time):
             await cursor.execute(
                 "UPDATE `users` SET `last_taxi_time`= %s WHERE `id`=%s",
                 (new_taxi_time, user_id,)
+            )
+    finally:
+        conn.close()
+
+async def get_report(user_id):
+    conn = await connect()
+    try:
+        async with conn.cursor(aiomysql.DictCursor) as cursor:
+            await cursor.execute("SELECT * FROM `report` WHERE `author` = %s", (user_id,))
+            result = await cursor.fetchone()
+            return result
+    finally:
+        conn.close()
+
+async def register_new_report(from_id, text, created):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "INSERT INTO `report` (`author`, `text`, `created`) VALUES (%s, %s, %s)",
+                (from_id, text, created) 
+            )
+    finally:
+        conn.close()
+
+async def get_reports():
+    conn = await connect()
+    try:
+        async with conn.cursor(aiomysql.DictCursor) as cursor:
+            await cursor.execute("SELECT * FROM `report` LIMIT 10")
+            result = await cursor.fetchall()
+            return result
+    finally:
+        conn.close()
+
+async def close_report(id):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(f"DELETE FROM `report` WHERE id={id}")
+    finally:
+        conn.close()
+
+async def get_user_by_report_id(report_id):
+    conn = await connect()
+    try:
+        async with conn.cursor(aiomysql.DictCursor) as cursor:
+            await cursor.execute(f"SELECT * FROM `report` WHERE id={report_id}")
+            result = await cursor.fetchone()
+            await cursor.execute(f"SELECT * FROM `users` WHERE id={result['author']}")
+            result = await cursor.fetchone()
+            return result 
+    finally:
+        conn.close()
+
+async def get_admins():
+    conn = await connect()
+    try:
+        async with conn.cursor(aiomysql.DictCursor) as cursor:
+            await cursor.execute("""
+                SELECT *
+                FROM `users`
+                WHERE `status` IN ('Администратор', 'Управляющий', 'Владелец')
+            """)
+            result = await cursor.fetchall()  # используйте fetchall() для получения всех записей
+            return result 
+    finally:
+        conn.close()
+
+async def sell_cups(user_id, count):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            res = int(count) * 1500
+            await cursor.execute(
+                f"UPDATE `users` SET `cups`=`cups`-%s, `balance`=`balance`+%s  WHERE `id`=%s",
+                (count, res, user_id,)
             )
     finally:
         conn.close()

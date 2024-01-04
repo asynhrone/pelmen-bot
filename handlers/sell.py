@@ -1,5 +1,6 @@
 from vkbottle.bot import BotLabeler, Message, Bot
-from functions import get_user, insert_user, sell_bitcoin, sell_farm, sell_farm_all, sell_them
+from functions import (get_user, insert_user, sell_bitcoin, sell_farm, 
+                       sell_farm_all, sell_them, converter, sell_cups)
 from config import successfull_registration, token, farm_prices, car_cost
 import random
 
@@ -9,20 +10,42 @@ bot = Bot(token=token)
 
 BITCOIN_COST = random.randint(1900, 3300)
 
-@sl.message(text="Продать биткоин все")
-async def bitcoin_selling(message: Message):
+@sl.message(text=["Продать биткоин", "Продать биткоин <count>"])
+async def bitcoin_selling(message: Message, count=None):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)
     if user_info:
-        if user_info['bitcoin'] == 0:
-            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет биткоинов для продажи ❌")
-        else:
-            count = user_info['bitcoin']
-            res = count * BITCOIN_COST
-            await sell_bitcoin(user_id=user_info['id'], count=user_info['bitcoin'], cost=BITCOIN_COST)
-            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {count:,}₿".replace(',', '.')+
+        if count is not None:
+            if count == "все":
+                if user_info['bitcoin'] == 0 or user_info['bitcoin'] is None:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет биткоинов для продажи ❌")
+                else:
+                    count = user_info['bitcoin']
+                    res = count * BITCOIN_COST
+                    await sell_bitcoin(user_id=user_info['id'], count=user_info['bitcoin'], cost=BITCOIN_COST)
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {count:,}₿".replace(',', '.')+
                                  f" за {res:,}$".replace(',', '.')+
                                  f"\n📊 Текущий курс: {BITCOIN_COST:,}$ за 1₿".replace(',', '.'))
+            else:
+                count = await converter(count)
+                try:
+                    count_int = int(count)
+                except ValueError:
+                    return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверное количество биткоинов ❌")
+                if user_info['bitcoin'] != 0 and user_info['bitcoin'] is not None:
+                    if int(count) > user_info['bitcoin']:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете продать больше, чем у вас есть ❌")
+                    else:
+                        count = user_info['bitcoin']
+                        res = count * BITCOIN_COST
+                        await sell_bitcoin(user_id=user_info['id'], count=user_info['bitcoin'], cost=BITCOIN_COST)
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {count:,}₿".replace(',', '.')+
+                                            f" за {res:,}$".replace(',', '.')+
+                                            f"\n📊 Текущий курс: {BITCOIN_COST:,}$ за 1₿".replace(',', '.'))
+                else:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет биткоинов для продажи ❌")
+        else:
+            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), используйте: Продать биткоин «кол-во»")
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
         await message.answer(successfull_registration)
@@ -85,6 +108,47 @@ async def car_selling(message: Message):
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали машину"
                                     f" за {int(cost):,}$".replace(',', '.'))
                 await sell_them(user_id=user_info['id'], type='car', product=user_info['car'])
+    else:
+        await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
+        await message.answer(successfull_registration)
+
+
+@sl.message(text=["Продать кубки", "Продать кубки <count>"])
+async def selling_cups(message: Message, count=None):
+    user = await bot.api.users.get(message.from_id)
+    user_info = await get_user(user_id=user[0].id)
+    if user_info:
+        if count is not None:
+            if count == "все":
+                if user_info['cups'] == 0 or user_info['cups'] is None:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет кубков для продажи ❌")
+                else:
+                    count = user_info['cups']
+                    if int(count) < 0:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете продать кубки, если у вас минусовое количество ❌")
+                    else:
+                        res = 15000 * int(count)
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {int(user_info['cups']):,} кубков за {int(res):,}$".replace(',', '.'))
+                        await sell_cups(user_id=user_info['id'], count=user_info['cups'])
+            else:
+                count = await converter(count)
+                try:
+                    count_int = int(count)
+                except ValueError:
+                    return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверное количество кубков ❌")
+                if user_info['cups'] != 0:
+                    if int(user_info['cups']) < 0:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете продать кубки, если у вас минусовое количество ❌")
+                    elif int(count) > user_info['cups']:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете продать больше, чем у вас есть ❌")
+                    else:
+                        res = 15000 * int(count)
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {int(count):,} кубков за {int(res):,}$".replace(',', '.'))
+                        await sell_cups(user_id=user_info['id'], count=count)
+                else:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет кубков для продажи ❌")
+        else:
+            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), используйте: Продать кубки «кол-во»")
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
         await message.answer(successfull_registration)

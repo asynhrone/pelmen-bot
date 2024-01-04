@@ -1,8 +1,9 @@
 from vkbottle.bot import BotLabeler, Message, Bot
 from functions import (get_user, insert_user, get_fishing, fishing_update_cooldown, 
                        fish_rob_upgrade, converter, casino_win, casino_lose)
-from config import successfull_registration, token, farm_income, farm_prices, BITCOIN_COST, multipliers
+from config import (successfull_registration, token, multipliers, weights)
 import random
+from random import choice
 from datetime import datetime, timedelta
 import re
 
@@ -86,50 +87,40 @@ async def fishing(message: Message):
 
 @gl.message(text=['Казино', 'Азино', 'Казино <count>', 'Азино <count>'])
 async def casino(message: Message, count=None):
-    user = await bot.api.users.get(message.from_id)
-    user_info = await get_user(user_id=user[0].id)
-    if user_info:
-        if count is not None:
-            multiplier = random.choice(multipliers)
-            if count == "все":
-                if user_info['balance'] <= 0:
-                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств ❌")
-                else:
-                    bet = user_info['balance']
-                    if multiplier == 0:
-                        await casino_lose(user_id=user_info['id'], bet=bet)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(bet):,}$ (x0) ❌".replace(',', '.'))
-                    if multiplier in [0.25, 0.5, 0.75]:
-                        res = bet * multiplier
-                        await casino_lose(user_id=user_info['id'], bet=res)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(res):,}$ (x{multiplier}) ❌".replace(',', '.'))
-                    elif multiplier == 1:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), деньги остаются при вас 😯")
-                    elif multiplier in [1.5, 2.5]:
-                        res = bet * multiplier
-                        await casino_win(user_id=user_info['id'], bet=res)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы выиграли {int(res):,} (x{multiplier}) 🤑".replace(',', '.'))
-            else:
-                bet = await converter(count=count)
-                if bet > user_info['balance']:
-                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств ❌")
-                else:
-                    if multiplier == 0:
-                        await casino_lose(user_id=user_info['id'], bet=bet)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(bet):,}$ (x0) ❌".replace(',', '.'))
-                    if multiplier in [0.25, 0.5, 0.75]:
-                        res = bet * multiplier
-                        await casino_lose(user_id=user_info['id'], bet=res)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы проиграли {int(res):,}$ (x0) ❌".replace(',', '.'))
-                    elif multiplier == 1:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), деньги остаются при вас 😯")
-                    elif multiplier in [1.5, 2.5, 3.0, 5.0, 10.0]:
-                        res = bet * multiplier
-                        await casino_win(user_id=user_info['id'], bet=res)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы выиграли {int(res):,} (x{multiplier}) 🤑".replace(',', '.'))
-        else:
-            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), использование: Казино «ставка»")
-    else:
-        await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
+    user_id = message.from_id
+    user_info = await get_user(user_id=user_id)
+
+    if not user_info:
+        user = (await bot.api.users.get(user_id))[0]
+        await insert_user(user_id=user_id, first_name=user[0].first_name)
         return await message.answer(successfull_registration)
-    
+
+    if count is None:
+        return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), использование: Казино «ставка»")
+
+    balance = user_info['balance']
+    if count in ["все", "вобанк", "вабанк", "во банк", "ва банк"]:
+        bet = balance
+    else:
+        bet = await converter(count=count)
+
+    if bet <= 0 or bet > balance:
+        return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств ❌")
+
+    multiplier = random.choices(multipliers, weights=weights, k=1)[0]
+    result_msg = ""
+    res = bet * multiplier
+
+    if multiplier == 0:
+        await casino_lose(user_id=user_info['id'], bet=bet)
+        result_msg = f"вы проиграли {int(bet):,}$ (x0) ❌"
+    elif multiplier < 1:
+        await casino_lose(user_id=user_info['id'], bet=res)
+        result_msg = f"вы проиграли {int(res):,}$ (x{multiplier}) ❌"
+    elif multiplier == 1:
+        result_msg = "деньги остаются при вас (x1) 😯 "
+    else:
+        await casino_win(user_id=user_info['id'], bet=res)
+        result_msg = f"вы выиграли {int(res):,}$ (x{multiplier}) 🤑"
+
+    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), {result_msg}".replace(',', '.'))

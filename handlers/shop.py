@@ -30,7 +30,7 @@ async def flats(message: Message, number=None):
             suffix = {"1": "квартиру в хрущевке", "2": "квартиру в центре Челябинска", "3": "квартиру на окраине Питера", "4": "квартиру в центре Москвы", "5": "квартиру в Нью-Йорке", "6": "квартиру в сердце Пекина", "7": "квартиру в Odeon Tower"}
             if number <= 0 or number > 7:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверный номер квартиры ❌")
-            elif flat_cost.get(number, 0) > user_info["balance"]:
+            elif int(flat_cost.get(str(number), 0)) > user_info["balance"]:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств❌")
             elif user_info["flat"] is not None and user_info["flat"] != 0:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас уже есть квартира❌")
@@ -40,13 +40,13 @@ async def flats(message: Message, number=None):
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы купили {suffix.get(str(number))} за {int(price):,}$ 🥳".replace(',', '.'))
         else:
             return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), квартиры:"
-                "\n\n1. Квартира в хрущевке - 25.000$"
-                "\n2. Квартира в центре Челябинска - 100.000$"
-                "\n3. Квартира на окраине Питера - 500.000$"
-                "\n4. Квартира в центре Москвы - 3.000.000$"
-                "\n5. Квартира в Нью-Йорке - 25.000.000$"
-                "\n6. Квартира в сердце Пекина - 75.000.000$"
-                "\n7. Квартира в Odeon Tower - 300.000.000$"
+                "\n\n1. Квартира в хрущевке - 250.000.000$"
+                "\n2. Квартира в центре Челябинска - 1.000.000.000$"
+                "\n3. Квартира на окраине Питера - 50.000.000.000"
+                "\n4. Квартира в центре Москвы - 300.000.000.000$"
+                "\n5. Квартира в Нью-Йорке - 2.500.000.000.000$"
+                "\n6. Квартира в сердце Пекина - 7.500.000.000.000"
+                "\n7. Квартира в Odeon Tower - 300.000.000.000.000$"
                 "\n\n🛒 Для покупки используйте: Квартиры «номер»")  
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
@@ -54,7 +54,7 @@ async def flats(message: Message, number=None):
     
 
 @shl.message(text=["Машины", "Машины <number:int>"])
-async def flats(message: Message, number=None):
+async def cars(message: Message, number=None):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)
     if user_info: 
@@ -63,7 +63,7 @@ async def flats(message: Message, number=None):
                       "5": "Ferrari 458 Italia", "6": "Mercedes-Benz Pullman", "7": "Rolls-Royce Sweptail", "8": "Bugatti Bolide"}
             if number <= 0 or number > 8:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверный номер машины ❌")
-            elif car_cost.get(number, 0) > user_info["balance"]:
+            elif int(car_cost.get(str(number), 0)) > user_info["balance"]:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств❌")
             elif user_info["car"] is not None and user_info["car"] != 0:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас уже есть машина❌")
@@ -88,7 +88,7 @@ async def flats(message: Message, number=None):
     
 
 @shl.message(text=["Яхты", "Яхты <number:int>"])
-async def flats(message: Message, number=None):
+async def yachts(message: Message, number=None):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)
     if user_info: 
@@ -97,7 +97,7 @@ async def flats(message: Message, number=None):
                       "5": "Eclipse", "6": "Histoty SUPREMEE"}
             if number <= 0 or number > 6:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверный номер машины ❌")
-            elif car_cost.get(number, 0) > user_info["balance"]:
+            elif int(yacht_cost.get(str(number), 0)) > user_info["balance"]:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), недостаточно средств❌")
             elif user_info["yacht"] is not None and user_info["yacht"] != 0:
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас уже есть машина❌")
