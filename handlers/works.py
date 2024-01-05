@@ -15,8 +15,8 @@ async def taxi(message: Message):
     now = datetime.now()
     if user_info:
         if user_info['last_taxi_time'] is None or now - user_info['last_taxi_time'] > timedelta(minutes=40):
-            win_dollars = random.randint(5000, 100000)
-            win_exp = random.randint(50, 1000)
+            win_dollars = random.randint(50000, 1000000)
+            win_exp = random.randint(500, 10000)
             attachment = "photo-222672748_456239067_c47cece7082a887111"
             await get_taxi(user_id=user_info['id'], win_dollars=win_dollars, win_exp=win_exp)
             await taxi_update_cooldown(user_id=user_info['id'], new_taxi_time=now.isoformat())

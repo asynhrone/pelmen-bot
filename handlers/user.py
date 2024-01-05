@@ -4,8 +4,8 @@ from functions import (get_user, insert_user, insert_newnickname, get_top_users_
                        bonus_get, race_update_cups, race_update_cooldown, get_users_by_them,
                        get_random_user, generate_profile_image, bot_get_user,
                        converter, transfer_money, register_new_report, get_report, 
-                       get_admins)
-from config import successfull_registration, token, phrases, emoji_dict
+                       get_admins, plus_bank_balance, minus_bank_balance)
+from config import successfull_registration, token, phrases, emoji_dict, limits
 import random, asyncio
 from datetime import datetime, timedelta
 
@@ -44,61 +44,61 @@ async def help(message: Message):
 async def profile(message: Message):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)
-    if user_info:
-        farm_name = {1: "ASICminer 8 Nano Pro", 2: "Ebit E9 Plus", 3: "Miner 741", 4: "DragonMint T1"}
-        farm_type = farm_name.get(user_info['farm-type']) 
-        display_status = f"🔥 {user_info['status']}" if user_info['status'] != "Пользователь" else ''
-        display_status = display_status.strip() 
-        exp = user_info['exp'] if user_info['exp'] is not None else 0
-        cups = user_info['cups'] if user_info['cups'] is not None else 0
-
-        display_property = "\n\n🔑 Имущество:"
-        if 'flat' in user_info and user_info['flat'] is not None:
-            flat = {"1": "Квартира в хрущевке", "2": "Квартира в центре Челябинска", "3": "Квартира на окраине Питера",
-                    "4": "Квартира в центре Москвы", "5": "Квартира в Нью-Йорке", "6": "Квартира в сердце Пекина",
-                    "7": "Квартира в Odeon Tower", "8": "Сарай"}
-            flat_description = flat.get(str(user_info['flat']), '')
-            if flat_description:  # Проверка, что описание квартиры существует
-                display_property += f"\nㅤ🏬 {flat_description}"
-
-        if 'farm-count' in user_info and user_info['farm-count']:
-            # Переменная `farm_type` должна быть определена где-то в вашем коде.
-            display_property += f"\nㅤ🔋 Ферма: {farm_type} ({user_info['farm-count']:,} шт.)".replace(',', '.')
-
-        if 'car' in user_info and user_info['car'] is not None:
-            car = {"1": "Nissan Pathfinder", "2": "Mazda 6", "3": "Mercedes-Benz CLS",
-                    "4": "Audi R8", "5": "Ferrari 458 Italia", "6": "Mercedes-Benz Pullman",
-                    "7": "Rolls-Royce Sweptail", "8": "Bugatti Bolide", "9": "Aurus Senat Limousine", "10": "Новогодний унитаз 🌲"}
-            car_description = car.get(str(user_info['car']), '')
-            if car_description:  # Проверка, что описание автомобиля существует
-                display_property += f"\nㅤ🚗 {car_description}"
-
-        if 'yacht' in user_info and user_info['yacht'] is not None:
-            yacht = {"1": "Seven Seas", "2": "Octopus", "3": "Lady Moura", "4": "Al Mirqab", 
-                      "5": "Eclipse", "6": "Histoty SUPREMEE", "7": "Баранка"}
-            yacht_description = yacht.get(str(user_info['yacht']), '')
-            if yacht_description:  # Проверка, что описание автомобиля существует
-                display_property += f"\nㅤ🛥️ {yacht_description}"
-
-        if display_property.strip() == "🔑 Имущество:":
-            display_property += '\nㅤㅤПусто'
-
-        profile_message = (
-            f"@id{user_info['id']}({user_info['nickname']}), ваш профиль:"
-            f"\n\n🔎 ID: {user_info['bot_id']}" +
-            (f"\n{display_status}" if display_status else "") +
-            f"\n🏆 {cups:,} Кубков".replace(',', '.') +
-            f"\n💸 Баланс: {user_info['balance']:,}$".replace(',', '.') +
-            f"\n⭐ {exp:,} EXP".replace(',', '.') +
-            f"\n💽 Биткоины: {user_info['bitcoin']:,}₿".replace(',', '.') +
-            display_property 
-        )
-        attachment = await generate_profile_image(flat=user_info['flat'], car=user_info['car'])
-        return await message.answer(profile_message, attachment=attachment)
-
-    else:
+    if not user_info:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
         return await message.answer(successfull_registration)
+    
+    farm_name = {1: "ASICminer 8 Nano Pro", 2: "Ebit E9 Plus", 3: "Miner 741", 4: "DragonMint T1"}
+    farm_type = farm_name.get(user_info['farm-type']) 
+    display_status = f"🔥 {user_info['status']}" if user_info['status'] != "Пользователь" else ''
+    display_status = display_status.strip() 
+    exp = user_info['exp'] if user_info['exp'] is not None else 0
+    cups = user_info['cups'] if user_info['cups'] is not None else 0
+
+    display_property = "\n\n🔑 Имущество:"
+    if 'flat' in user_info and user_info['flat'] is not None:
+        flat = {"1": "Квартира в хрущевке", "2": "Квартира в центре Челябинска", "3": "Квартира на окраине Питера",
+                "4": "Квартира в центре Москвы", "5": "Квартира в Нью-Йорке", "6": "Квартира в сердце Пекина",
+                "7": "Квартира в Odeon Tower", "8": "Сарай"}
+        flat_description = flat.get(str(user_info['flat']), '')
+        if flat_description:  # Проверка, что описание квартиры существует
+            display_property += f"\nㅤ🏬 {flat_description}"
+
+    if 'farm-count' in user_info and user_info['farm-count']:
+        # Переменная `farm_type` должна быть определена где-то в вашем коде.
+        display_property += f"\nㅤ🔋 Ферма: {farm_type} ({user_info['farm-count']:,} шт.)".replace(',', '.')
+
+    if 'car' in user_info and user_info['car'] is not None:
+        car = {"1": "Nissan Pathfinder", "2": "Mazda 6", "3": "Mercedes-Benz CLS",
+                "4": "Audi R8", "5": "Ferrari 458 Italia", "6": "Mercedes-Benz Pullman",
+                "7": "Rolls-Royce Sweptail", "8": "Bugatti Bolide", "9": "Aurus Senat Limousine", "10": "Новогодний унитаз 🌲"}
+        car_description = car.get(str(user_info['car']), '')
+        if car_description:  # Проверка, что описание автомобиля существует
+            display_property += f"\nㅤ🚗 {car_description}"
+
+    if 'yacht' in user_info and user_info['yacht'] is not None:
+        yacht = {"1": "Seven Seas", "2": "Octopus", "3": "Lady Moura", "4": "Al Mirqab", 
+                    "5": "Eclipse", "6": "Histoty SUPREMEE", "7": "Баранка"}
+        yacht_description = yacht.get(str(user_info['yacht']), '')
+        if yacht_description:  # Проверка, что описание автомобиля существует
+            display_property += f"\nㅤ🛥️ {yacht_description}"
+
+    if display_property.strip() == "🔑 Имущество:":
+        display_property += '\nㅤㅤПусто'
+
+    profile_message = (
+        f"@id{user_info['id']}({user_info['nickname']}), ваш профиль:"
+        f"\n\n🔎 ID: {user_info['bot_id']}" +
+        (f"\n{display_status}" if display_status else "") +
+        f"\n🏆 {cups:,} Кубков".replace(',', '.') +
+        f"\n💸 Баланс: {user_info['balance']:,}$".replace(',', '.') +
+        f"\n💳 В банке: {user_info['bank_balance']:,}$".replace(',', '.') +
+        f"\n⭐ {exp:,} EXP".replace(',', '.') +
+        f"\n💽 Биткоины: {user_info['bitcoin']:,}₿".replace(',', '.') +
+        display_property 
+    )
+    attachment = await generate_profile_image(flat=user_info['flat'], car=user_info['car'])
+    return await message.answer(profile_message, attachment=attachment)
     
 
 @ul.message(text="Баланс")
@@ -180,8 +180,8 @@ async def top(message: Message, type=None):
 async def bonus(message: Message):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)
-    price = random.randint(1000, 100000)
-    exp = random.randint(100, 500)
+    price = random.randint(100000, 10000000)
+    exp = random.randint(1000, 5000)
     if user_info:
         now = datetime.now()
         if user_info['last_bonus_time'] is None:
@@ -190,8 +190,8 @@ async def bonus(message: Message):
             await update_user_bonus_time(user_id=user_info['id'], last_bonus_time=now.isoformat())
             await message.answer(f"@id{user_info['id']}({user_info['nickname']}), держите бонус {price:,}$ и {exp:,} EXP 😎".replace(',', '.'))
         else:   
-            if now - user_info['last_bonus_time'] < timedelta(hours=24):
-                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), бонус доступен лишь раз в 24 часа ❌")
+            if now - user_info['last_bonus_time'] < timedelta(hours=12):
+                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), бонус доступен лишь раз в 12 часов ❌")
             else:
                 exp_count = user_info['exp']
                 await bonus_get(user_id=user_info['id'], price=price, price_exp=exp, exp_count=exp_count)
@@ -222,16 +222,10 @@ async def race(message: Message):
                 users_with_cars = await get_users_by_them(type='car')
                 opponent = await get_random_user(users=users_with_cars, excluded_user_id=user_info['id'])
                 sent_message = await message.answer(
-                    f"@id{user_info['id']}({user_info['nickname']}), вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n⌛ Результаты через 4"
+                    f"@id{user_info['id']}({user_info['nickname']}), вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n⌛ Результаты через несколько секунд."
                 )
-                for i in reversed(range(-1, 3)):
+                for i in reversed(range(-1, 2)):
                     await asyncio.sleep(1)
-                    new_text = (
-                        f"@id{user_info['id']}({user_info['nickname']}), "
-                        f"вы начали гонку против @id{opponent['id']}({opponent['nickname']}) 🏁\n\n"
-                        f"⌛ Результаты через {i+1}"
-                    )
-                    await edit_message_with_correct_id(bot.api, sent_message.peer_id, sent_message, new_text)
 
                 if int(user_info['car']) > int(opponent['car']):
                     result_text = "🥇 Вы пришли к финишу первым! +100 🏆"
@@ -268,14 +262,14 @@ async def transfer(message: Message, id=None, count=None):
                     count = await converter(count)
                     if count > user_info['balance']:
                         await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас недостаточно средств ❌")
-                    elif user_info['status'] not in ["Управляющий", "Владелец"] and count > 200000000:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 200 миллионов за одну операцию❌")
-                    elif user_info['status'] not in ["Администратор", "Управляющий", "Владелец"] and count > 100000000:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 100 миллионов за одну операцию❌\n\n✨ Для увеличения лимита приобретите статус Администратора.")
-                    elif user_info['status'] not in ["ELITE", "Администратор", "Управляющий", "Владелец"] and count > 50000000:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 50 миллионов за одну операцию❌\n\n✨ Для увеличения лимита приобретите ELITE-статус.")
-                    elif user_info['status'] not in ["VIP", "ELITE", "Администратор", "Управляющий", "Владелец"] and count > 20000000:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 20 миллионов за одну операцию❌\n\n✨ Для увеличения лимита приобретите VIP-статус.")
+                    elif user_info['status'] not in ["Управляющий", "Владелец"] and count > 200000000000000:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 200 триллионов за одну операцию❌")
+                    elif user_info['status'] not in ["Администратор", "Управляющий", "Владелец"] and count > 100000000000000:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 100 триллионов за одну операцию❌\n\n✨ Для увеличения лимита приобретите статус Администратора.")
+                    elif user_info['status'] not in ["ELITE", "Администратор", "Управляющий", "Владелец"] and count > 50000000000000:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 50 триллионов за одну операцию❌\n\n✨ Для увеличения лимита приобретите ELITE-статус.")
+                    elif user_info['status'] not in ["VIP", "ELITE", "Администратор", "Управляющий", "Владелец"] and count > 20000000000000:
+                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете переводить больше 20 триллионов за одну операцию❌\n\n✨ Для увеличения лимита приобретите VIP-статус.")
                     else:
                         await transfer_money(user_id=user_info['id'], operation='-', count=count)
                         await transfer_money(user_id=opponent['id'], operation='+', count=count)
@@ -303,20 +297,26 @@ async def donate(message: Message):
         await message.answer(f"@id{user_info['id']}({user_info['nickname']}), донат-магазин:"
                              "\n\n💎 Статус «VIP» | 49₽ (СКИДКА -50%)"
                              "\nㅤ- Уникальный статус в профиле «🔥 VIP»"
+                             "\nㅤ- Максимальный баланс увеличен до $10 трлд."
+                             "\nㅤ- Максимальный бакнковский баланс увеличен $10 трлд."
                              "\nㅤ- Длина никнейма увеличена до 32 символов."
-                             "\nㅤ- Лимит перевода увеличен до $50 млн."
+                             "\nㅤ- Лимит перевода увеличен до $50 трлн."
                              "\n\n💎 Статус «ELITE» | 99₽ (СКИДКА -50%)"
                              "\nㅤ- Уникальный статус в профиле «🔥 ELITE»"
+                             "\nㅤ- Максимальный баланс увеличен до $25 трлд."
+                             "\nㅤ- Максимальный бакнковский баланс увеличен $25 трлд."
                              "\nㅤ- Длина никнейма увеличена до 64 символов."
-                             "\nㅤ- Лимит перевода увеличен до $100 млн."
+                             "\nㅤ- Лимит перевода увеличен до $100 трлн."
                              "\n\n💎 Статус «Администратор» | 249₽ (СКИДКА -50%)"
                              "\nㅤ- Уникальный статус в профиле «🔥 Администратор»"
+                             "\nㅤ- Максимальный баланс увеличен до $50 трлд."
+                             "\nㅤ- Максимальный бакнковский баланс увеличен $50 трлд."
                              "\nㅤ- Доступ к команде «Репорты»"
                              "\nㅤ- Длина никнейма увеличена до 128 символов."
-                             "\nㅤ- Лимит перевода увеличен до $200 млн."
+                             "\nㅤ- Лимит перевода увеличен до $200 трлн."
                              "\n\n💸 Валюта"
-                             "\nㅤ- $1 млн. | 1₽ (СКИДКА -50%)"
-                             "\nㅤ- $100 млн. | 49₽ (СКИДКА -50%)"
+                             "\nㅤ- $1 трлн. | 1₽ (СКИДКА -50%)"
+                             "\nㅤ- $100 трлн. | 49₽ (СКИДКА -50%)"
                              "\n\n🎮 Для покупки: https://vk.cc/ctFXZW"
                              f"\n🎲 При покупке укажите, что вы хотите приобрести, а также ваш игровой ID: {user_info['bot_id']}")
     else:
@@ -343,7 +343,62 @@ async def report(message: Message, text=None):
                 for admin in admins:
                     await bot.api.messages.send(admin['id'], random_id=0, message=admin_message)
             else:
-                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), использование: Репорт «текст» ❌")
+                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), использование: Репорт «текст» ")
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name)
         await message.answer(successfull_registration)
+
+
+@ul.message(text=["Банк", "Банк <type> <count>"])
+async def bank(message: Message, type=None, count=None):
+    user = await bot.api.users.get(message.from_id)
+    user_info = await get_user(user_id=user[0].id)
+    if not user_info:
+        await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
+        return await message.answer(successfull_registration)
+    
+    limit = limits.get(user_info['status'])
+    if type and count is not None:
+        if type in ["Пополнить", "пополнить"]:
+            if count == "все":
+                count = user_info['balance']
+                await plus_bank_balance(user_id=user_info['id'], count=count)
+                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы положили на бакнковский счет {count:,}$ 🤑".replace(',', '.'))
+            else:
+                count = await converter(count)
+                try:
+                    int(count)
+                except:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверная сумма ❌")
+                if int(count) > int(user_info['balance']):
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете положить больше, чем у вас есть ❌")
+                elif (int(count) + int(user_info['bank_balance'])) > limit:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), сумма пополнения превышает допустимый лимит ❌")
+                else:
+                    await plus_bank_balance(user_id=user_info['id'], count=count)
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы положили на бакнковский счет {count:,}$ 🤑".replace(',', '.'))
+        if type in ["Снять", "снять"]:
+            if count == "все":
+                count = user_info['bank_balance']
+                await minus_bank_balance(user_id=user_info['id'], count=count)
+                await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы сняли с бакнковского счета {count:,}$ 👍".replace(',', '.'))
+            else:
+                count = await converter(count)
+                try:
+                    int(count)
+                except:
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверная сумма ❌")
+                if int(count) > int(user_info['bank_balance']):
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете снять больше, чем у вас есть ❌")
+                else:
+                    await minus_bank_balance(user_id=user_info['id'], count=count)
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы сняли с бакнковского счета {count:,}$ 👍".replace(',', '.'))
+    else:
+        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), банк:" +
+                            f"\n\n«Счет №{user_info['id']}»" +
+                            f"\n💰 Банковский баланс: {user_info['bank_balance']:,}$".replace(',', '.') +
+                            f"\n❗ Лимит: {limit:,}$".replace(',', '.') +
+                            "\n\n💳 Для пополнения: Банк пополнить «сумма»"
+                            "\n💷 Для снятия: Банк снять «сумма»"
+                            "\n🤝 Для перевода: Перевести «ID» «сумма»")
+        await message.answer(sticker_id=79403)

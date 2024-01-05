@@ -58,7 +58,7 @@ async def mining_shop(message: Message, number=None, count=None):
                     await update_mining_shop(user_id=user_info['id'], number=number, balance=user_info['balance'], price=price, count=count)
                     return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы купили {count} ферм {farm_name.get(number)}")
             else:
-                if user_info['balance'] < price:
+                if (user_info['balance']) < price:
                     return await message.answer(
                         f"@id{user_info['id']}({user_info['nickname']}), у вас недостаточно средств для покупки {count} {farm_name.get(number, 'ферм')} ❌"
                     )
@@ -76,10 +76,10 @@ async def mining_shop(message: Message, number=None, count=None):
                         return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы купили {count} ферм {farm_name.get(number)}")
         else:
             return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), майнинг-магазин:"
-                                "\n\n1. 🔋 ASICminer 8 Nano Pro (50₿) - 300.000$"
-                                "\n2. 🔋 Ebit E9 Plus (300₿) - 700.000$"
-                                "\n3. 🔋 Miner 741 (1000₿) - 1.000.000$"
-                                "\n4. 💠 DragonMint T1 (6000₿) - 3.000.000$"
+                                "\n\n1. 🔋 ASICminer 8 Nano Pro (1₿) - 3.000.000$"
+                                "\n2. 🔋 Ebit E9 Plus (50₿) - 7.000.000.000$"
+                                "\n3. 🔋 Miner 741 (1000₿) - 120.000.000.000.000$"
+                                "\n4. 💠 DragonMint T1 (3000₿) - 300.000.000.000.000$"
                                 "\n\n🛒 Для покупки используйте: Фермы «1-4» «кол-во»")
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 

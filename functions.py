@@ -156,7 +156,13 @@ async def get_top_users_by_them(type):
     conn = await connect()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute(f"SELECT `id`, `nickname`, `{type}` FROM `users` ORDER BY `{type}` DESC LIMIT 10")
+            await cursor.execute(f"""
+                SELECT `id`, `nickname`, `{type}`
+                FROM `users`
+                WHERE `status` NOT IN ('Управляющий', 'Владелец', 'Администратор')
+                ORDER BY `{type}` DESC
+                LIMIT 10
+            """)
             result = await cursor.fetchall()
             return result
     finally:
@@ -507,6 +513,28 @@ async def sell_cups(user_id, count):
             await cursor.execute(
                 f"UPDATE `users` SET `cups`=`cups`-%s, `balance`=`balance`+%s  WHERE `id`=%s",
                 (count, res, user_id,)
+            )
+    finally:
+        conn.close()
+
+async def plus_bank_balance(user_id, count):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                f"UPDATE `users` SET `balance`=`balance`-%s,  `bank_balance`=`bank_balance`+%s  WHERE `id`=%s",
+                (count, count, user_id,)
+            )
+    finally:
+        conn.close()
+
+async def minus_bank_balance(user_id, count):
+    conn = await connect()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                f"UPDATE `users` SET `balance`=`balance`+%s,  `bank_balance`=`bank_balance`-%s  WHERE `id`=%s",
+                (count, count, user_id,)
             )
     finally:
         conn.close()

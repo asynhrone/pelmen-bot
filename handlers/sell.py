@@ -73,16 +73,15 @@ async def farm_selling(message: Message, count=None):
                     count_int = int(count)
                 except ValueError:
                     return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), неверное количество ферм ❌")
-                if user_info['farm-count'] != 0:
-                    if int(count) > user_info['farm-count']:
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете продать больше, чем у вас есть ❌")
-                    else:
-                        if int(count) == user_info['farm-count']:
-                            ifall = True
-                        farm_type_price = farm_prices[int(user_info['farm-type'])]
-                        cost = int(count) * farm_type_price / 2
-                        await sell_farm(user_id=user_info['id'], count=count, cost=cost, ifall=ifall)
-                        await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {int(count):,} {farm_type} за {int(cost):,}$".replace(',', '.'))
+                if user_info['farm-count'] and user_info['farm-count'] > 0:
+                    if int(count) == user_info['farm-count']:
+                        ifall = True
+                    elif int(count) > user_info['farm-count']:
+                        return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы не можете продать больше, чем у вас есть ❌")
+                    farm_type_price = farm_prices[int(user_info['farm-type'])]
+                    cost = int(count) * farm_type_price / 2
+                    await sell_farm(user_id=user_info['id'], count=count, cost=cost, ifall=ifall)
+                    await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы продали {int(count):,} {farm_type} за {int(cost):,}$".replace(',', '.'))
                 else:
                     await message.answer(f"@id{user_info['id']}({user_info['nickname']}), у вас нет ферм для продажи ❌")
         else:

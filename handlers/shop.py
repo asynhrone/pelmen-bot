@@ -40,13 +40,13 @@ async def flats(message: Message, number=None):
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы купили {suffix.get(str(number))} за {int(price):,}$ 🥳".replace(',', '.'))
         else:
             return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), квартиры:"
-                "\n\n1. Квартира в хрущевке - 250.000.000$"
-                "\n2. Квартира в центре Челябинска - 1.000.000.000$"
+                "\n\n1. Квартира в хрущевке - 25.000$"
+                "\n2. Квартира в центре Челябинска - 1.000.000$"
                 "\n3. Квартира на окраине Питера - 50.000.000.000"
-                "\n4. Квартира в центре Москвы - 300.000.000.000$"
-                "\n5. Квартира в Нью-Йорке - 2.500.000.000.000$"
-                "\n6. Квартира в сердце Пекина - 7.500.000.000.000"
-                "\n7. Квартира в Odeon Tower - 300.000.000.000.000$"
+                "\n4. Квартира в центре Москвы - 300.000.000.000.000$"
+                "\n5. Квартира в Нью-Йорке - 500.000.000.000.000$"
+                "\n6. Квартира в сердце Пекина - 750.000.000.000.000"
+                "\n7. Квартира в Odeon Tower - 3.000.000.000.000.000$"
                 "\n\n🛒 Для покупки используйте: Квартиры «номер»")  
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
@@ -73,14 +73,14 @@ async def cars(message: Message, number=None):
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы купили {suffix.get(str(number))} за {int(price):,}$ 🥳".replace(',', '.'))
         else:
             return await message.answer(f"@id{user_info['id']}({user_info['nickname']}), машины:"
-                "\n\n1. Nissan Pathfinder - 10.000$"
-                "\n2. Mazda 6 - 100.000$"
-                "\n3. Mercedes-Benz CLS - 700.000$"
-                "\n4. Audi R8 - 2.500.000$"
-                "\n5. Ferrari 458 Italia - 25.000.000$"
-                "\n6. Mercedes-Benz Pullman - 300.000.000$"
-                "\n7. Rolls-Royce Sweptail - 555.000.000$"
-                "\n8. Bugatti Bolide - 15.000.000.000$"
+                "\n\n1. Nissan Pathfinder - 10.000.000.000$"
+                "\n2. Mazda 6 - 1.000.000.000.000$"
+                "\n3. Mercedes-Benz CLS - 10.000.000.000.000$"
+                "\n4. Audi R8 - 25.000.000.000.000$"
+                "\n5. Ferrari 458 Italia - 250.000.000.000.000$"
+                "\n6. Mercedes-Benz Pullman - 900.000.000.000.000$"
+                "\n7. Rolls-Royce Sweptail - 1.200.000.000.000.000$"
+                "\n8. Bugatti Bolide - 3.000.000.000.000.000$"
                 "\n\n🛒 Для покупки используйте: Машины «номер»")  
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 

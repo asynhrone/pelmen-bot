@@ -1,7 +1,7 @@
 from vkbottle.bot import BotLabeler, Message, Bot
 from functions import (get_user, insert_user, get_fishing, fishing_update_cooldown, 
                        fish_rob_upgrade, converter, casino_win, casino_lose)
-from config import (successfull_registration, token, multipliers, weights)
+from config import (successfull_registration, token, multipliers, weights, limits)
 import random
 from random import choice
 from datetime import datetime, timedelta
@@ -43,8 +43,8 @@ async def fishing(message: Message):
         now = datetime.now()
         if user_info['last_fishing_time'] is None:
             fish_level = user_info['fishing_rob_level']
-            win_dollars = fish_level*random.randint(10000,15000)
-            win_exp = random.randint(100, 300)
+            win_dollars = fish_level*random.randint(100000, 1500000)
+            win_exp = random.randint(1000, 3000)
             exp_count = user_info['exp']
             await get_fishing(user_id=user_info['id'], win_dollars=win_dollars, win_exp=win_exp, exp_count=exp_count)
             await fishing_update_cooldown(user_id=user_info['id'], new_fishing_time=now.isoformat())
@@ -56,8 +56,8 @@ async def fishing(message: Message):
                 await message.answer(f"@id{user_info['id']}({user_info['nickname']}), рыбачить можно раз в 2 часа ❌")
             else:
                 fish_level = user_info['fishing_rob_level']
-                win_dollars = fish_level*random.randint(10000,15000)
-                win_exp = random.randint(100, 300)
+                win_dollars = fish_level*random.randint(100000, 1500000)
+                win_exp = random.randint(1000, 3000)
                 exp_count = user_info['exp']
                 await get_fishing(user_id=user_info['id'], win_dollars=win_dollars, win_exp=win_exp, exp_count=exp_count)
                 await fishing_update_cooldown(user_id=user_info['id'], new_fishing_time=now.isoformat())
@@ -109,18 +109,26 @@ async def casino(message: Message, count=None):
 
     multiplier = random.choices(multipliers, weights=weights, k=1)[0]
     result_msg = ""
-    res = bet * multiplier
-
+    res = bet * multiplier 
+    balance = user_info['balance']
+    
+    limit = limits.get(user_info['status'], float('inf'))  # Где 'float('inf')' - это значение по умолчанию, если статус пользователя не соответствует ключу в словаре limits
+    
     if multiplier == 0:
         await casino_lose(user_id=user_info['id'], bet=bet)
         result_msg = f"вы проиграли {int(bet):,}$ (x0) ❌"
-    elif multiplier < 1:
-        await casino_lose(user_id=user_info['id'], bet=res)
-        result_msg = f"вы проиграли {int(res):,}$ (x{multiplier}) ❌"
-    elif multiplier == 1:
-        result_msg = "деньги остаются при вас (x1) 😯 "
     else:
-        await casino_win(user_id=user_info['id'], bet=res)
-        result_msg = f"вы выиграли {int(res):,}$ (x{multiplier}) 🤑"
+        new_balance = res + balance
+        if new_balance > limit:  # Если сумма выигрыша превышает лимит
+            res = limit - balance  # Корректируем выигрыш так, чтобы баланс был равен лимиту
+            
+        if multiplier < 1:
+            await casino_lose(user_id=user_info['id'], bet=res)
+            result_msg = f"вы проиграли {int(res):,}$ (x{multiplier}) ❌"
+        elif multiplier == 1:
+            result_msg = "деньги остаются при вас (x1) 😯 "
+        else:
+            await casino_win(user_id=user_info['id'], bet=res)
+            result_msg += f"вы выиграли {int(res):,}$ (x{multiplier}) 🤑"
 
     await message.answer(f"@id{user_info['id']}({user_info['nickname']}), {result_msg}".replace(',', '.'))
