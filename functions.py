@@ -444,7 +444,7 @@ async def get_report(user_id):
     conn = await connect()
     try:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
-            await cursor.execute("SELECT * FROM `report` WHERE `author` = %s", (user_id,))
+            await cursor.execute("SELECT * FROM `reports` WHERE `author` = %s", (user_id,))
             result = await cursor.fetchone()
             return result
     finally:
@@ -455,7 +455,7 @@ async def register_new_report(from_id, text, created):
     try:
         async with conn.cursor() as cursor:
             await cursor.execute(
-                "INSERT INTO `report` (`author`, `text`, `created`) VALUES (%s, %s, %s)",
+                "INSERT INTO `reports` (`author`, `text`, `created`) VALUES (%s, %s, %s)",
                 (from_id, text, created) 
             )
     finally:
@@ -465,7 +465,7 @@ async def get_reports():
     conn = await connect()
     try:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
-            await cursor.execute("SELECT * FROM `report` LIMIT 10")
+            await cursor.execute("SELECT * FROM `reports` LIMIT 10")
             result = await cursor.fetchall()
             return result
     finally:
@@ -475,7 +475,7 @@ async def close_report(id):
     conn = await connect()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute(f"DELETE FROM `report` WHERE id={id}")
+            await cursor.execute(f"DELETE FROM `reports` WHERE id={id}")
     finally:
         conn.close()
 
@@ -483,7 +483,7 @@ async def get_user_by_report_id(report_id):
     conn = await connect()
     try:
         async with conn.cursor(aiomysql.DictCursor) as cursor:
-            await cursor.execute(f"SELECT * FROM `report` WHERE id={report_id}")
+            await cursor.execute(f"SELECT * FROM `reports` WHERE id={report_id}")
             result = await cursor.fetchone()
             await cursor.execute(f"SELECT * FROM `users` WHERE id={result['author']}")
             result = await cursor.fetchone()
