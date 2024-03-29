@@ -1,5 +1,5 @@
 from datetime import timedelta
-token = 'vk1.a.RDPnOJHFkDKjD_osc3F2n-qnHTs4ULwEyK7IWL3zCJvKMyduGDxJNf5rFTFN0YcubEapBeqVneW7w27tRpy6VqMD4rkdCKuiPFBnkUf9XBKEcSddeSjv44PXds9CCYKcURmx2wmir5AeJ8oXYSQweWH3rXUnNqr0UirVQ2HlmUS4KTZYERzOfXIk_IAMDAg-h0hpvFKUtiQddnqok0BsbQ'
+token = ''
 BOT_NAME = "Пельмень"
 farm_income = {1: "1", 2: "50", 3: "1000", 4: "3000"}
 farm_prices = {1: 3000000, 2: 7000000000, 3: 120000000000000, 4: 300000000000000}
