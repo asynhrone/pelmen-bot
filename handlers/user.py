@@ -1,11 +1,6 @@
 from vkbottle.bot import BotLabeler, Message, Bot
-from functions import (get_user, insert_user, insert_newnickname, get_top_users_by_them, 
-                       format_number, get_user_place_in_top, update_user_bonus_time, 
-                       bonus_get, race_update_cups, race_update_cooldown, get_users_by_them,
-                       get_random_user, generate_profile_image, bot_get_user,
-                       converter, transfer_money, register_new_report, get_report, 
-                       get_admins, plus_bank_balance, minus_bank_balance)
-from config import successfull_registration, token, phrases, emoji_dict, limits
+from functions import *
+from config import *
 import random, asyncio
 from datetime import datetime, timedelta
 
@@ -13,7 +8,7 @@ ul = BotLabeler()
 ul.vbml_ignore_case = True
 bot = Bot(token=token)
 
-@ul.message(text='Помощь')
+@ul.message(text='Хелп')
 async def help(message: Message):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)
@@ -38,7 +33,7 @@ async def help(message: Message):
     else:
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
         return await message.answer(successfull_registration)
-    
+
 
 @ul.message(text=['Профиль', 'Проф'])
 async def profile(message: Message):
@@ -48,39 +43,30 @@ async def profile(message: Message):
         await insert_user(user_id=user[0].id, first_name=user[0].first_name) 
         return await message.answer(successfull_registration)
     
-    farm_name = {1: "ASICminer 8 Nano Pro", 2: "Ebit E9 Plus", 3: "Miner 741", 4: "DragonMint T1"}
     farm_type = farm_name.get(user_info['farm-type']) 
     display_status = f"🔥 {user_info['status']}" if user_info['status'] != "Пользователь" else ''
     display_status = display_status.strip() 
     exp = user_info['exp'] if user_info['exp'] is not None else 0
     cups = user_info['cups'] if user_info['cups'] is not None else 0
-
+    bank_balance = user_info['bank_balance'] if user_info['bank_balance'] is not None else 0
     display_property = "\n\n🔑 Имущество:"
+
     if 'flat' in user_info and user_info['flat'] is not None:
-        flat = {"1": "Квартира в хрущевке", "2": "Квартира в центре Челябинска", "3": "Квартира на окраине Питера",
-                "4": "Квартира в центре Москвы", "5": "Квартира в Нью-Йорке", "6": "Квартира в сердце Пекина",
-                "7": "Квартира в Odeon Tower", "8": "Сарай"}
-        flat_description = flat.get(str(user_info['flat']), '')
-        if flat_description:  # Проверка, что описание квартиры существует
+        flat_description = flats.get(str(user_info['flat']), '')
+        if flat_description:  
             display_property += f"\nㅤ🏬 {flat_description}"
 
     if 'farm-count' in user_info and user_info['farm-count']:
-        # Переменная `farm_type` должна быть определена где-то в вашем коде.
         display_property += f"\nㅤ🔋 Ферма: {farm_type} ({user_info['farm-count']:,} шт.)".replace(',', '.')
 
     if 'car' in user_info and user_info['car'] is not None:
-        car = {"1": "Nissan Pathfinder", "2": "Mazda 6", "3": "Mercedes-Benz CLS",
-                "4": "Audi R8", "5": "Ferrari 458 Italia", "6": "Mercedes-Benz Pullman",
-                "7": "Rolls-Royce Sweptail", "8": "Bugatti Bolide", "9": "Aurus Senat Limousine", "10": "Новогодний унитаз 🌲"}
-        car_description = car.get(str(user_info['car']), '')
-        if car_description:  # Проверка, что описание автомобиля существует
+        car_description = cars.get(str(user_info['car']), '')
+        if car_description:  
             display_property += f"\nㅤ🚗 {car_description}"
 
     if 'yacht' in user_info and user_info['yacht'] is not None:
-        yacht = {"1": "Seven Seas", "2": "Octopus", "3": "Lady Moura", "4": "Al Mirqab", 
-                    "5": "Eclipse", "6": "Histoty SUPREMEE", "7": "Баранка"}
-        yacht_description = yacht.get(str(user_info['yacht']), '')
-        if yacht_description:  # Проверка, что описание автомобиля существует
+        yacht_description = yachts.get(str(user_info['yacht']), '')
+        if yacht_description:  
             display_property += f"\nㅤ🛥️ {yacht_description}"
 
     if display_property.strip() == "🔑 Имущество:":
@@ -92,11 +78,12 @@ async def profile(message: Message):
         (f"\n{display_status}" if display_status else "") +
         f"\n🏆 {cups:,} Кубков".replace(',', '.') +
         f"\n💸 Баланс: {user_info['balance']:,}$".replace(',', '.') +
-        f"\n💳 В банке: {user_info['bank_balance']:,}$".replace(',', '.') +
+        f"\n💳 В банке: {bank_balance:,}$".replace(',', '.') +
         f"\n⭐ {exp:,} EXP".replace(',', '.') +
         f"\n💽 Биткоины: {user_info['bitcoin']:,}₿".replace(',', '.') +
         display_property 
     )
+
     attachment = await generate_profile_image(flat=user_info['flat'], car=user_info['car'])
     return await message.answer(profile_message, attachment=attachment)
     

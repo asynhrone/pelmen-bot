@@ -20,7 +20,7 @@ async def taxi(message: Message):
             attachment = "photo-222672748_456239067_c47cece7082a887111"
             await get_taxi(user_id=user_info['id'], win_dollars=win_dollars, win_exp=win_exp)
             await taxi_update_cooldown(user_id=user_info['id'], new_taxi_time=now.isoformat())
-            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы поработали в такси:\n\n💸 Вы заработали {win_dollars:,}$ и {win_exp:,} EXP".replace(',', '.'),
+            await message.answer(f"@id{user_info['id']}({user_info['nickname']}), вы поработали в такси:\n\n💸 Заработано {win_dollars:,}$ и {win_exp:,} EXP".replace(',', '.'),
                                  attachment=attachment)
             return
         else:
