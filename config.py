@@ -1,6 +1,6 @@
 from datetime import timedelta
 # GENERAL SETTINGS ---------------------------- #
-token = 'vk1.a.eMoTnl8n1RORmlzBpg0hD8tKMbPEA2ZTELHgJr--N_U8NmaltWketCEaNZYWwEUfXgae4MlZxP85Z5I7uYwA4lm39eGHdtQOO8QY-7VctsFksLbqw3EAaFAnFuDfHskfQ1JwDut6Mw3hRUl8ecHqQoQ_mb18dl1JpS4b9gFxL1wCnPNm8lDyIxnG0exNDdg-Tmu-VrGZ2ZCZnJC1xWaK9Q'
+token = ''
 BOT_NAME = "Пельмень"
 BITCOIN_COST = 1950
 # FARM SETTINGS ---------------------------- #
@@ -113,10 +113,10 @@ yacht_cost = {
         }
 # DONATE SETTINGS ---------------------------- #
 limits = {
-            "Пользователь": 2000000000000000,
-            "VIP": 10000000000000000,
-            "ELITE": 25000000000000000,
-            "Администратор": 50000000000000000,
-            "Управляющий": 50000000000000000,
-            "Владелец": 50000000000000000
-        }
+        "Пользователь": 2000000000000000,
+        "VIP": 10000000000000000,
+        "ELITE": 25000000000000000,
+        "Администратор": 50000000000000000,
+        "Управляющий": 50000000000000000,
+        "Владелец": 50000000000000000
+}
