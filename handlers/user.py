@@ -8,7 +8,7 @@ ul = BotLabeler()
 ul.vbml_ignore_case = True
 bot = Bot(token=token)
 
-@ul.message(text='Хелп')
+@ul.message(text=["Хелп", "Помощь"])
 async def help(message: Message):
     user = await bot.api.users.get(message.from_id)
     user_info = await get_user(user_id=user[0].id)

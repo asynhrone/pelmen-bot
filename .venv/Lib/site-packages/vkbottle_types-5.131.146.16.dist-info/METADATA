@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: vkbottle-types
+Version: 5.131.146.16
+Summary: Types for vkbottle
+License: MIT
+Author: timoniq
+Maintainer: FeeeeK
+Requires-Python: >=3.7.2,<4.0.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Dist: pydantic (>=1.10.6,<2.0.0)
+Requires-Dist: vkbottle (>=4.3.12,<5.0.0)

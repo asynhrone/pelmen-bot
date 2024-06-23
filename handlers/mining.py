@@ -1,7 +1,7 @@
 from vkbottle.bot import BotLabeler, Message, Bot
 from functions import (get_user, insert_user, update_mining_shop,
                        bitcoin_mine, update_user_mining_time)
-from config import successfull_registration, token, farm_income, farm_prices, BITCOIN_COST
+from config import *
 import random
 from datetime import datetime, timedelta
 
@@ -19,7 +19,6 @@ async def mining_page(message: Message):
         if user_info['farm-count'] == 0 or user_info['farm-count'] is None:
             display_redirect = "🔋 У вас нет майниговых ферм. Для приобретения, воспользуйтесь командой «Фермы»."
         else:
-            farm_name = {1: "ASICminer 8 Nano Pro", 2: "Ebit E9 Plus", 3: "Miner 741", 4: "DragonMint T1"}
             farm_type = farm_name.get(user_info['farm-type']) 
             gen_income = int(farm_income[user_info['farm-type']]) * user_info['farm-count'] #general income
             display_redirect = (f"\n🔋 Ферма {farm_type} ({user_info['farm-count']:,} шт.)".replace(',', '.')+
