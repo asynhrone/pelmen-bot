@@ -3,7 +3,6 @@ from vkbottle.bot import Bot, Message
 from vkbottle import PhotoMessageUploader
 from config import token
 
-# Токен вашего бота
 bot = Bot(token=token)
 
 @bot.on.message(text="Загрузить картинку")
