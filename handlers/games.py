@@ -112,15 +112,15 @@ async def casino(message: Message, count=None):
     res = bet * multiplier 
     balance = user_info['balance']
     
-    limit = limits.get(user_info['status'], float('inf'))  # Где 'float('inf')' - это значение по умолчанию, если статус пользователя не соответствует ключу в словаре limits
+    limit = limits.get(user_info['status'], float('inf'))  
     
     if multiplier == 0:
         await casino_lose(user_id=user_info['id'], bet=bet)
         result_msg = f"вы проиграли {int(bet):,}$ (x0) ❌"
     else:
         new_balance = res + balance
-        if new_balance > limit:  # Если сумма выигрыша превышает лимит
-            res = limit - balance  # Корректируем выигрыш так, чтобы баланс был равен лимиту
+        if new_balance > limit:  
+            res = limit - balance  
             
         if multiplier < 1:
             await casino_lose(user_id=user_info['id'], bet=res)
